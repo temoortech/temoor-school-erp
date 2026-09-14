@@ -14,13 +14,13 @@ export default async function ModulePlaceholderPage({ params }: { params: { modu
   }
 
   const navigationItem = ERP_NAVIGATION.find((item) => item.href === `/${params.module}`);
-  if (!navigationItem) {
+  if (!navigationItem || !user.schoolId) {
     notFound();
   }
 
-  const availability = user.schoolId ? await getModuleAvailability(user.schoolId, params.module) : null;
+  const availability = await getModuleAvailability(user.schoolId, params.module);
 
-  if (!user.isSuperAdmin && !availability?.isEnabled) {
+  if (!user.isSuperAdmin && !availability.isEnabled) {
     notFound();
   }
 

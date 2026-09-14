@@ -188,31 +188,37 @@ export async function getDashboardData(schoolId: string) {
     currencySymbol: school?.settings?.currencySymbol || "Rs.",
     metrics: [
       {
+        key: "students",
         label: "Students",
         value: studentCount.toLocaleString(),
         description: `${parentCount.toLocaleString()} linked parent profiles available for coordination.`
       },
       {
+        key: "staff",
         label: "Teachers & staff",
         value: teacherCount.toLocaleString(),
         description: `${staffCount.toLocaleString()} staff records exist across the school.`
       },
       {
+        key: "academics",
         label: "Classes & sections",
         value: `${classCount}/${sectionCount}`,
         description: "Live academic structure currently configured in the tenant database."
       },
       {
+        key: "admissions",
         label: "Admission inquiries",
         value: admissionCount.toLocaleString(),
         description: "Prospective student leads captured for the school so far."
       },
       {
+        key: "vouchers",
         label: "Pending vouchers",
         value: pendingVoucherCount.toLocaleString(),
         description: "Fee vouchers still issued, partially paid, or overdue."
       },
       {
+        key: "collections",
         label: "Collected receipts",
         value: `${school?.settings?.currencySymbol || "Rs."} ${Number(paymentTotal._sum.amount || 0).toLocaleString("en-PK")}`,
         description: `${examCount.toLocaleString()} active or published exam records currently available.`

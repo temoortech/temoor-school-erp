@@ -19,6 +19,7 @@ export function UserMenu({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -56,6 +57,7 @@ export function UserMenu({
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
+        aria-haspopup="dialog"
         className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
         onClick={() => setOpen((current) => !current)}
       >
@@ -77,11 +79,13 @@ export function UserMenu({
         <div
           id={panelId}
           ref={panelRef}
-          aria-label="User panel"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby={titleId}
           className="absolute right-0 z-30 mt-3 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/10"
         >
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-slate-950">{user.name}</p>
+            <p id={titleId} className="text-sm font-semibold text-slate-950">{user.name}</p>
             <p className="text-sm text-slate-600">{user.email}</p>
             <div className="flex flex-wrap gap-2">
               <Badge>{user.role.replace(/_/g, " ")}</Badge>

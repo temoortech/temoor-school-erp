@@ -6,6 +6,9 @@ import prisma from "@/lib/prisma";
 
 const SESSION_COOKIE_NAME = "temoor_erp_session";
 const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
+const SESSION_ENTITY = "Session";
+const SESSION_ISSUED_ACTION = "AUTH_SESSION_ISSUED";
+const SESSION_REVOKED_ACTION = "AUTH_SESSION_REVOKED";
 
 const sessionUserSelect = {
   id: true,
@@ -40,21 +43,6 @@ type SessionPayload = {
   expiresAt: number;
 };
 
-type SessionRecord = {
-  userId: string;
-  expiresAt: number;
-};
-
-const globalForSessions = globalThis as typeof globalThis & {
-  erpSessionStore?: Map<string, SessionRecord>;
-};
-
-const sessionStore = globalForSessions.erpSessionStore ?? new Map<string, SessionRecord>();
-
-if (!globalForSessions.erpSessionStore) {
-  globalForSessions.erpSessionStore = sessionStore;
-}
-
 function getSessionSecret() {
   const secret = process.env.AUTH_SESSION_SECRET || process.env.NEXTAUTH_SECRET;
 
@@ -67,15 +55,6 @@ function getSessionSecret() {
 
 function signPayload(payload: string) {
   return createHmac("sha256", getSessionSecret()).update(payload).digest("base64url");
-}
-
-function cleanupExpiredSessions() {
-  const now = Date.now();
-  sessionStore.forEach((session, sessionId) => {
-    if (session.expiresAt <= now) {
-      sessionStore.delete(sessionId);
-    }
-  });
 }
 
 function encodeSession(payload: SessionPayload) {
@@ -105,6 +84,35 @@ function decodeSession(token: string): SessionPayload | null {
   }
 }
 
+async function isSessionActive(session: SessionPayload) {
+  if (session.expiresAt <= Date.now()) {
+    return false;
+  }
+
+  const [issuedLog, revokedLog] = await Promise.all([
+    prisma.auditLog.findFirst({
+      where: {
+        userId: session.userId,
+        action: SESSION_ISSUED_ACTION,
+        entity: SESSION_ENTITY,
+        entityId: session.sessionId
+      },
+      select: { id: true }
+    }),
+    prisma.auditLog.findFirst({
+      where: {
+        userId: session.userId,
+        action: SESSION_REVOKED_ACTION,
+        entity: SESSION_ENTITY,
+        entityId: session.sessionId
+      },
+      select: { id: true }
+    })
+  ]);
+
+  return Boolean(issuedLog) && !revokedLog;
+}
+
 export async function signInWithCredentials(email: string, password: string) {
   const user = await prisma.user.findUnique({
     where: { email },
@@ -128,11 +136,20 @@ export async function signInWithCredentials(email: string, password: string) {
     throw new Error("INVALID_CREDENTIALS");
   }
 
-  cleanupExpiredSessions();
-
   const sessionId = randomUUID();
   const expiresAt = Date.now() + SESSION_MAX_AGE_MS;
-  sessionStore.set(sessionId, { userId: user.id, expiresAt });
+
+  await prisma.auditLog.create({
+    data: {
+      schoolId: user.schoolId,
+      userId: user.id,
+      action: SESSION_ISSUED_ACTION,
+      entity: SESSION_ENTITY,
+      entityId: sessionId,
+      metadata: JSON.stringify({ expiresAt })
+    }
+  });
+
   const token = encodeSession({ userId: user.id, sessionId, expiresAt });
 
   cookies().set(SESSION_COOKIE_NAME, token, {
@@ -151,7 +168,21 @@ export async function signOut() {
   const session = token ? decodeSession(token) : null;
 
   if (session) {
-    sessionStore.delete(session.sessionId);
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { id: true, schoolId: true }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        schoolId: user?.schoolId || null,
+        userId: session.userId,
+        action: SESSION_REVOKED_ACTION,
+        entity: SESSION_ENTITY,
+        entityId: session.sessionId,
+        metadata: JSON.stringify({ revokedAt: Date.now() })
+      }
+    });
   }
 
   cookieStore.delete(SESSION_COOKIE_NAME);
@@ -165,19 +196,10 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     return null;
   }
 
-  cleanupExpiredSessions();
   const session = decodeSession(token);
 
-  if (!session || session.expiresAt <= Date.now()) {
+  if (!session || !(await isSessionActive(session))) {
     cookieStore.delete(SESSION_COOKIE_NAME);
-    return null;
-  }
-
-  const activeSession = sessionStore.get(session.sessionId);
-
-  if (!activeSession || activeSession.userId !== session.userId || activeSession.expiresAt <= Date.now()) {
-    cookieStore.delete(SESSION_COOKIE_NAME);
-    sessionStore.delete(session.sessionId);
     return null;
   }
 
@@ -188,7 +210,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   if (!user || !user.isActive) {
     cookieStore.delete(SESSION_COOKIE_NAME);
-    sessionStore.delete(session.sessionId);
     return null;
   }
 

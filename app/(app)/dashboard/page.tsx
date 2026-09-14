@@ -40,12 +40,9 @@ export default async function DashboardPage({
 
   const view = dashboardViews.some((item) => item.key === searchParams?.view) ? searchParams?.view || "overview" : "overview";
   const dashboard = await getDashboardData(user.schoolId);
-  const summaryCards =
-    view === "finance"
-      ? [dashboard.metrics[1], dashboard.metrics[4], dashboard.metrics[5]].filter(Boolean)
-      : view === "admissions"
-        ? [dashboard.metrics[0], dashboard.metrics[2], dashboard.metrics[3]].filter(Boolean)
-        : dashboard.metrics;
+  const metricKeys =
+    view === "finance" ? new Set(["staff", "vouchers", "collections"]) : view === "admissions" ? new Set(["students", "academics", "admissions"]) : null;
+  const summaryCards = metricKeys ? dashboard.metrics.filter((metric) => metricKeys.has(metric.key)) : dashboard.metrics;
 
   return (
     <div className="page-shell space-y-6">
