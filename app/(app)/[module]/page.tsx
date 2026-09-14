@@ -20,7 +20,7 @@ export default async function ModulePlaceholderPage({ params }: { params: { modu
 
   const availability = await getModuleAvailability(user.schoolId, params.module);
 
-  if (!user.isSuperAdmin && !availability.isEnabled) {
+  if (!availability.isEnabled) {
     notFound();
   }
 

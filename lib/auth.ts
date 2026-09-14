@@ -57,6 +57,26 @@ function signPayload(payload: string) {
   return createHmac("sha256", getSessionSecret()).update(payload).digest("base64url");
 }
 
+function getCookieScope() {
+  const domain = process.env.SESSION_COOKIE_DOMAIN || undefined;
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production" || Boolean(domain),
+    sameSite: "lax" as const,
+    path: "/",
+    domain,
+    priority: "high" as const
+  };
+}
+
+function clearSessionCookie(cookieStore: ReturnType<typeof cookies>) {
+  cookieStore.set(SESSION_COOKIE_NAME, "", {
+    ...getCookieScope(),
+    maxAge: 0,
+    expires: new Date(0)
+  });
+}
+
 function encodeSession(payload: SessionPayload) {
   const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   const signature = signPayload(encoded);
@@ -152,14 +172,8 @@ export async function signInWithCredentials(email: string, password: string) {
 
   const token = encodeSession({ userId: user.id, sessionId, expiresAt });
 
-  const cookieDomain = process.env.SESSION_COOKIE_DOMAIN || undefined;
-
   cookies().set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    domain: cookieDomain,
+    ...getCookieScope(),
     maxAge: SESSION_MAX_AGE_MS / 1000,
     expires: new Date(expiresAt)
   });
@@ -188,7 +202,7 @@ export async function signOut() {
     });
   }
 
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  clearSessionCookie(cookieStore);
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -202,7 +216,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const session = decodeSession(token);
 
   if (!session || !(await isSessionActive(session))) {
-    cookieStore.delete(SESSION_COOKIE_NAME);
+    clearSessionCookie(cookieStore);
     return null;
   }
 
@@ -212,7 +226,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   });
 
   if (!user || !user.isActive) {
-    cookieStore.delete(SESSION_COOKIE_NAME);
+    clearSessionCookie(cookieStore);
     return null;
   }
 
