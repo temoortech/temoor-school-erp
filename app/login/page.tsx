@@ -110,7 +110,7 @@ export default async function LoginPage({
                     <p className="mt-2 text-lg font-semibold text-slate-950">
                       {schoolSummary.shortName || schoolSummary.name}
                     </p>
-                    <p className="mt-1 text-sm text-slate-600">{schoolSummary.subdomain}. ERP tenancy is active.</p>
+                    <p className="mt-1 text-sm text-slate-600">{schoolSummary.subdomain} ERP tenancy is active.</p>
                   </div>
                 ) : (
                   <EmptyState
