@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -36,8 +36,24 @@ export type SessionUser = Prisma.UserGetPayload<{ select: typeof sessionUserSele
 
 type SessionPayload = {
   userId: string;
+  sessionId: string;
   expiresAt: number;
 };
+
+type SessionRecord = {
+  userId: string;
+  expiresAt: number;
+};
+
+const globalForSessions = globalThis as typeof globalThis & {
+  erpSessionStore?: Map<string, SessionRecord>;
+};
+
+const sessionStore = globalForSessions.erpSessionStore ?? new Map<string, SessionRecord>();
+
+if (!globalForSessions.erpSessionStore) {
+  globalForSessions.erpSessionStore = sessionStore;
+}
 
 function getSessionSecret() {
   const secret = process.env.AUTH_SESSION_SECRET || process.env.NEXTAUTH_SECRET;
@@ -51,6 +67,15 @@ function getSessionSecret() {
 
 function signPayload(payload: string) {
   return createHmac("sha256", getSessionSecret()).update(payload).digest("base64url");
+}
+
+function cleanupExpiredSessions() {
+  const now = Date.now();
+  sessionStore.forEach((session, sessionId) => {
+    if (session.expiresAt <= now) {
+      sessionStore.delete(sessionId);
+    }
+  });
 }
 
 function encodeSession(payload: SessionPayload) {
@@ -73,7 +98,7 @@ function decodeSession(token: string): SessionPayload | null {
 
   try {
     const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as SessionPayload;
-    if (!payload.userId || !payload.expiresAt) return null;
+    if (!payload.userId || !payload.sessionId || !payload.expiresAt) return null;
     return payload;
   } catch {
     return null;
@@ -103,20 +128,33 @@ export async function signInWithCredentials(email: string, password: string) {
     throw new Error("INVALID_CREDENTIALS");
   }
 
+  cleanupExpiredSessions();
+
+  const sessionId = randomUUID();
   const expiresAt = Date.now() + SESSION_MAX_AGE_MS;
-  const token = encodeSession({ userId: user.id, expiresAt });
+  sessionStore.set(sessionId, { userId: user.id, expiresAt });
+  const token = encodeSession({ userId: user.id, sessionId, expiresAt });
 
   cookies().set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    maxAge: SESSION_MAX_AGE_MS / 1000,
     expires: new Date(expiresAt)
   });
 }
 
 export async function signOut() {
-  cookies().delete(SESSION_COOKIE_NAME);
+  const cookieStore = cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const session = token ? decodeSession(token) : null;
+
+  if (session) {
+    sessionStore.delete(session.sessionId);
+  }
+
+  cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -127,10 +165,19 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     return null;
   }
 
+  cleanupExpiredSessions();
   const session = decodeSession(token);
 
   if (!session || session.expiresAt <= Date.now()) {
     cookieStore.delete(SESSION_COOKIE_NAME);
+    return null;
+  }
+
+  const activeSession = sessionStore.get(session.sessionId);
+
+  if (!activeSession || activeSession.userId !== session.userId || activeSession.expiresAt <= Date.now()) {
+    cookieStore.delete(SESSION_COOKIE_NAME);
+    sessionStore.delete(session.sessionId);
     return null;
   }
 
@@ -141,6 +188,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   if (!user || !user.isActive) {
     cookieStore.delete(SESSION_COOKIE_NAME);
+    sessionStore.delete(session.sessionId);
     return null;
   }
 

@@ -15,11 +15,15 @@ interface SidebarProps {
     campusCount: number;
     currentSessionName: string | null;
     activeModuleCount: number;
+    activeModuleKeys: string[];
   } | null;
   onNavigate: () => void;
 }
 
 export function Sidebar({ navigation, pathname, school, onNavigate }: SidebarProps) {
+  const enabledLinks = navigation.filter((item) => item.href === "/dashboard" || (item.moduleKey && school?.activeModuleKeys.includes(item.moduleKey)));
+  const plannedModules = navigation.filter((item) => item.href !== "/dashboard" && (!item.moduleKey || !school?.activeModuleKeys.includes(item.moduleKey)));
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-white/10 px-5 py-5">
@@ -51,7 +55,7 @@ export function Sidebar({ navigation, pathname, school, onNavigate }: SidebarPro
           {school?.currentSessionName ? <Badge variant="soft">{school.currentSessionName}</Badge> : null}
         </div>
         <nav className="space-y-1">
-          {navigation.map((item) => {
+          {enabledLinks.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
@@ -84,6 +88,22 @@ export function Sidebar({ navigation, pathname, school, onNavigate }: SidebarPro
             );
           })}
         </nav>
+
+        {plannedModules.length > 0 ? (
+          <div className="mt-6 space-y-3 px-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Planned modules</p>
+            <div className="flex flex-wrap gap-2">
+              {plannedModules.map((item) => (
+                <span
+                  key={item.href}
+                  className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-400"
+                >
+                  {item.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

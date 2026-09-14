@@ -48,7 +48,7 @@ export async function getShellContext(schoolId: string) {
       },
       modules: {
         where: { isEnabled: true },
-        select: { id: true }
+        select: { moduleKey: true }
       },
       academicSessions: {
         where: { isCurrent: true },
@@ -68,6 +68,7 @@ export async function getShellContext(schoolId: string) {
       subdomain: school.subdomain,
       campusCount: school.campuses.length,
       activeModuleCount: school.modules.length,
+      activeModuleKeys: school.modules.map((module) => module.moduleKey),
       currentSessionName: school.academicSessions[0]?.name || null,
       branding: school.branding
     }

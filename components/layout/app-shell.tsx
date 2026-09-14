@@ -20,6 +20,7 @@ interface AppShellProps {
     campusCount: number;
     currentSessionName: string | null;
     activeModuleCount: number;
+    activeModuleKeys: string[];
     branding: {
       primaryColor: string;
       secondaryColor: string;

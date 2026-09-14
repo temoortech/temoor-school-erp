@@ -19,6 +19,11 @@ export default async function ModulePlaceholderPage({ params }: { params: { modu
   }
 
   const availability = user.schoolId ? await getModuleAvailability(user.schoolId, params.module) : null;
+
+  if (!user.isSuperAdmin && !availability?.isEnabled) {
+    notFound();
+  }
+
   const title = navigationItem.label;
 
   return (
