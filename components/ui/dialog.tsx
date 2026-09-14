@@ -38,7 +38,7 @@ export function Dialog({
     const focusableElements = dialog?.querySelectorAll<HTMLElement>(
       "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"
     );
-    const firstFocusable = focusableElements?.[0];
+    const firstFocusable = focusableElements?.[0] || dialog;
     const lastFocusable = focusableElements?.[focusableElements.length - 1];
     firstFocusable?.focus();
 
@@ -74,6 +74,7 @@ export function Dialog({
       <div
         ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}

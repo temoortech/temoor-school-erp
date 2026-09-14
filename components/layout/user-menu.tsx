@@ -18,8 +18,8 @@ export function UserMenu({
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const buttonId = useId();
   const panelId = useId();
-  const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -53,11 +53,12 @@ export function UserMenu({
   return (
     <div className="relative">
       <button
+        id={buttonId}
         ref={buttonRef}
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
-        aria-haspopup="dialog"
+        aria-haspopup="menu"
         className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
         onClick={() => setOpen((current) => !current)}
       >
@@ -79,13 +80,12 @@ export function UserMenu({
         <div
           id={panelId}
           ref={panelRef}
-          role="dialog"
-          aria-modal="false"
-          aria-labelledby={titleId}
+          role="menu"
+          aria-labelledby={buttonId}
           className="absolute right-0 z-30 mt-3 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/10"
         >
-          <div className="space-y-2">
-            <p id={titleId} className="text-sm font-semibold text-slate-950">{user.name}</p>
+          <div role="none" className="space-y-2">
+            <p className="text-sm font-semibold text-slate-950">{user.name}</p>
             <p className="text-sm text-slate-600">{user.email}</p>
             <div className="flex flex-wrap gap-2">
               <Badge>{user.role.replace(/_/g, " ")}</Badge>
@@ -93,9 +93,9 @@ export function UserMenu({
             </div>
           </div>
 
-          <div className="mt-4 border-t border-slate-200 pt-4">
+          <div role="none" className="mt-4 border-t border-slate-200 pt-4">
             <form action={logoutAction}>
-              <Button type="submit" variant="secondary" className="w-full" onClick={() => setOpen(false)}>
+              <Button type="submit" variant="secondary" className="w-full" role="menuitem" onClick={() => setOpen(false)}>
                 Sign out
               </Button>
             </form>

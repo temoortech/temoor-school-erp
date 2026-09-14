@@ -152,11 +152,14 @@ export async function signInWithCredentials(email: string, password: string) {
 
   const token = encodeSession({ userId: user.id, sessionId, expiresAt });
 
+  const cookieDomain = process.env.SESSION_COOKIE_DOMAIN || undefined;
+
   cookies().set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    domain: cookieDomain,
     maxAge: SESSION_MAX_AGE_MS / 1000,
     expires: new Date(expiresAt)
   });

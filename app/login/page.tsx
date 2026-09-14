@@ -141,12 +141,12 @@ export default async function LoginPage({
                 ) : null}
 
                 <form action={loginAction} className="space-y-4">
-                  <FormField label="Email address" hint="Use the email stored on the existing User record.">
-                    <Input type="email" name="email" placeholder="admin@school.com" autoComplete="email" required />
+                  <FormField label="Email address" htmlFor="email" hint="Use the email stored on the existing User record.">
+                    <Input id="email" type="email" name="email" placeholder="admin@school.com" autoComplete="email" required />
                   </FormField>
 
-                  <FormField label="Password" hint="Passwords are verified against the existing bcrypt passwordHash.">
-                    <Input type="password" name="password" placeholder="••••••••" autoComplete="current-password" required />
+                  <FormField label="Password" htmlFor="password" hint="Passwords are verified against the existing bcrypt passwordHash.">
+                    <Input id="password" type="password" name="password" placeholder="••••••••" autoComplete="current-password" required />
                   </FormField>
 
                   <Button type="submit" className="w-full" disabled={!canSubmit}>

@@ -137,7 +137,7 @@ export async function getDashboardData(schoolId: string) {
       prisma.exam.count({
         where: {
           schoolId,
-          status: { in: [ExamPublishStatus.ENTERED, ExamPublishStatus.LOCKED, ExamPublishStatus.PUBLISHED] }
+          status: ExamPublishStatus.PUBLISHED
         }
       }),
       prisma.feePayment.aggregate({
@@ -221,7 +221,7 @@ export async function getDashboardData(schoolId: string) {
         key: "collections",
         label: "Collected receipts",
         value: `${school?.settings?.currencySymbol || "Rs."} ${Number(paymentTotal._sum.amount || 0).toLocaleString("en-PK")}`,
-        description: `${examCount.toLocaleString()} active or published exam records currently available.`
+        description: `${examCount.toLocaleString()} published exam records currently available.`
       }
     ],
     recentAdmissions,
