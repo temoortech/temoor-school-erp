@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/state";
@@ -14,8 +14,12 @@ export default async function ModulePlaceholderPage({ params }: { params: { modu
   }
 
   const navigationItem = ERP_NAVIGATION.find((item) => item.href === `/${params.module}`);
+  if (!navigationItem) {
+    notFound();
+  }
+
   const availability = user.schoolId ? await getModuleAvailability(user.schoolId, params.module) : null;
-  const title = navigationItem?.label || params.module.replace(/-/g, " ");
+  const title = navigationItem.label;
 
   return (
     <div className="page-shell space-y-6">

@@ -64,8 +64,8 @@ function decodeSession(token: string): SessionPayload | null {
   if (!encoded || !signature) return null;
 
   const expected = signPayload(encoded);
-  const providedBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
+  const providedBuffer = Buffer.from(signature, "base64url");
+  const expectedBuffer = Buffer.from(expected, "base64url");
 
   if (providedBuffer.length !== expectedBuffer.length || !timingSafeEqual(providedBuffer, expectedBuffer)) {
     return null;
