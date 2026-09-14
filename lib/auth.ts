@@ -70,7 +70,9 @@ function getCookieScope() {
   };
 }
 
-function clearSessionCookie(cookieStore: ReturnType<typeof cookies>) {
+type CookieStore = Awaited<ReturnType<typeof cookies>>;
+
+function clearSessionCookie(cookieStore: CookieStore) {
   cookieStore.set(SESSION_COOKIE_NAME, "", {
     ...getCookieScope(),
     maxAge: 0,
@@ -161,7 +163,9 @@ export async function signInWithCredentials(email: string, password: string) {
 
   const token = encodeSession({ userId: user.id, sessionId, expiresAt });
 
-  cookies().set(SESSION_COOKIE_NAME, token, {
+  const cookieStore = await cookies();
+
+  cookieStore.set(SESSION_COOKIE_NAME, token, {
     ...getCookieScope(),
     maxAge: SESSION_MAX_AGE_MS / 1000,
     expires: new Date(expiresAt)
@@ -169,7 +173,7 @@ export async function signInWithCredentials(email: string, password: string) {
 }
 
 export async function signOut() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const session = token ? decodeSession(token) : null;
 
@@ -195,7 +199,7 @@ export async function signOut() {
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (!token) {

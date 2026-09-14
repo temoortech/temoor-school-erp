@@ -50,11 +50,7 @@ export default async function ModulePlaceholderPage({ params }: { params: { modu
         <CardContent>
           <EmptyState
             title="Module UI not implemented yet"
-            description={
-              availability?.isEnabled
-                ? "This module is already enabled for the current school and can be connected in Phase 2."
-                : "This module is not yet enabled for the current school, or the backend enablement record does not exist yet."
-            }
+            description="This enabled module route is reserved for Phase 2 while the shared ERP shell remains available now."
             compact
           />
         </CardContent>
