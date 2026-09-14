@@ -9,6 +9,7 @@ const SESSION_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const SESSION_ENTITY = "Session";
 const SESSION_ISSUED_ACTION = "AUTH_SESSION_ISSUED";
 const SESSION_REVOKED_ACTION = "AUTH_SESSION_REVOKED";
+const DUMMY_PASSWORD_HASH = "$2a$12$C6UzMDM.H6dfI/f/IKcEeO1kA4hQgv6FQJ8E2G7A6bJmG7aN0jQ5W";
 
 const sessionUserSelect = {
   id: true,
@@ -109,28 +110,20 @@ async function isSessionActive(session: SessionPayload) {
     return false;
   }
 
-  const [issuedLog, revokedLog] = await Promise.all([
-    prisma.auditLog.findFirst({
-      where: {
-        userId: session.userId,
-        action: SESSION_ISSUED_ACTION,
-        entity: SESSION_ENTITY,
-        entityId: session.sessionId
-      },
-      select: { id: true }
-    }),
-    prisma.auditLog.findFirst({
-      where: {
-        userId: session.userId,
-        action: SESSION_REVOKED_ACTION,
-        entity: SESSION_ENTITY,
-        entityId: session.sessionId
-      },
-      select: { id: true }
-    })
-  ]);
+  const latestSessionEvent = await prisma.auditLog.findFirst({
+    where: {
+      userId: session.userId,
+      entity: SESSION_ENTITY,
+      entityId: session.sessionId,
+      action: {
+        in: [SESSION_ISSUED_ACTION, SESSION_REVOKED_ACTION]
+      }
+    },
+    orderBy: { timestamp: "desc" },
+    select: { action: true }
+  });
 
-  return Boolean(issuedLog) && !revokedLog;
+  return latestSessionEvent?.action === SESSION_ISSUED_ACTION;
 }
 
 export async function signInWithCredentials(email: string, password: string) {
@@ -142,18 +135,14 @@ export async function signInWithCredentials(email: string, password: string) {
     }
   });
 
-  if (!user) {
+  const passwordMatches = await bcrypt.compare(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+
+  if (!user || !passwordMatches) {
     throw new Error("INVALID_CREDENTIALS");
   }
 
   if (!user.isActive) {
     throw new Error("INACTIVE_USER");
-  }
-
-  const passwordMatches = await bcrypt.compare(password, user.passwordHash);
-
-  if (!passwordMatches) {
-    throw new Error("INVALID_CREDENTIALS");
   }
 
   const sessionId = randomUUID();

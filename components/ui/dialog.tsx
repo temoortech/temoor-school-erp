@@ -33,6 +33,8 @@ export function Dialog({
     if (!open) return;
 
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     const dialog = dialogRef.current;
     const focusableElements = dialog?.querySelectorAll<HTMLElement>(
@@ -63,6 +65,7 @@ export function Dialog({
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
   }, [onClose, open]);
