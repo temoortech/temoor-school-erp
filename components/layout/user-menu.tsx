@@ -38,6 +38,14 @@ export function UserMenu({
       if (event.key === "Escape") {
         setOpen(false);
         buttonRef.current?.focus();
+        return;
+      }
+
+      if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        event.preventDefault();
+        const items = panelRef.current?.querySelectorAll<HTMLElement>("[role=menuitem]");
+        const target = items?.[0];
+        target?.focus();
       }
     };
 
@@ -58,6 +66,7 @@ export function UserMenu({
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
+        aria-haspopup="menu"
         className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
         onClick={() => setOpen((current) => !current)}
       >
@@ -79,7 +88,7 @@ export function UserMenu({
         <div
           id={panelId}
           ref={panelRef}
-          role="group"
+          role="menu"
           aria-labelledby={buttonId}
           className="absolute right-0 z-30 mt-3 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/10"
         >

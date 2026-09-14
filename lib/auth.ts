@@ -135,7 +135,7 @@ export async function signInWithCredentials(email: string, password: string) {
     }
   });
 
-  const passwordMatches = await bcrypt.compare(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+  const passwordMatches = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
 
   if (!user || !passwordMatches) {
     throw new Error("INVALID_CREDENTIALS");

@@ -14,6 +14,10 @@ export default async function ModulePlaceholderPage({ params }: { params: { modu
   }
 
   const navigationItem = ERP_NAVIGATION.find((item) => item.href === `/${params.module}`);
+  if (params.module === "dashboard") {
+    redirect("/dashboard");
+  }
+
   if (!navigationItem || !user.schoolId) {
     notFound();
   }
