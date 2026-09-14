@@ -9,6 +9,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
 const dashboardViews = [
   { key: "overview", label: "Overview" },
   { key: "admissions", label: "Admissions" },

@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { getSessionUser } from "@/lib/auth";
 import { ERP_NAVIGATION, getShellContext } from "@/lib/dashboard";
 
+export const dynamic = "force-dynamic";
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
 

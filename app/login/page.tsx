@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState, ErrorState } from "@/components/ui/state";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
 const errorMessages: Record<string, string> = {
   missing: "Enter both email address and password.",
   invalid: "The email or password is incorrect.",

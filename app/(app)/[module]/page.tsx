@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/state";
 import { getSessionUser } from "@/lib/auth";
 import { ERP_NAVIGATION, getModuleAvailability } from "@/lib/dashboard";
 
+export const dynamic = "force-dynamic";
 export default async function ModulePlaceholderPage({ params }: { params: { module: string } }) {
   const user = await getSessionUser();
 
